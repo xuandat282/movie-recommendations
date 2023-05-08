@@ -179,7 +179,7 @@ def getRecPageRank(userid, n):
             "YIELD nodeId, score\n"
             "WITH gds.util.asNode(nodeId) AS movie, score\n"
             "WHERE movie:Movie\n"
-            "RETURN movie.title, score\n"
+            "RETURN movie.title as title, score\n"
             "ORDER BY score DESC\n"
             "LIMIT $n;",
             userid=str(userid), n=int(n))
