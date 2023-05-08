@@ -8,8 +8,14 @@ import {Movie} from "../models/movie";
   providedIn: 'root'
 })
 export class MoviesService {
+
   constructor(private http: HttpClient) { }
+
   getProducts(): Observable<Movie[]> {
     return this.http.get<Movie[]>(`${environment.apiUrl}/api/top/movie/top-n/10`);
+  }
+
+  getRecommendations(): Observable<Movie[]> {
+    return this.http.get<Movie[]>(`${environment.apiUrl}/api/rec_engine/pagerank/user3/10`);
   }
 }

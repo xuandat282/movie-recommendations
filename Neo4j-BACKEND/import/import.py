@@ -100,7 +100,7 @@ def loadRatings():
                  break
 
 def createUserNodes(row):
-    user = Node("User", id="User " + row[0])
+    user = Node("User", id="user" + row[0])
     graph.merge(user, "User", "id")
 
 def createRatingRelationship(row):
@@ -111,7 +111,7 @@ def createRatingRelationship(row):
         userId=ratingData[0], movieId=ratingData[1], rating=ratingData[2], timestamp=ratingData[3])
 
 def parseRowRatingRelationships(row):
-    userId = "User " + row[0]
+    userId = "user" + row[0]
     movieId = row[1]
     rating = float(row[2])
     timestamp = row[3]
@@ -139,7 +139,7 @@ def createTagRelationship(row):
         userId=tagData[0], movieId=tagData[1], tag=tagData[2], timestamp=tagData[3])
 
 def parseRowTagRelationships(row):
-    userId = "User " + row[0]
+    userId = "user" + row[0]
     movieId = row[1]
     tag = row[2]
     timestamp = row[3]
