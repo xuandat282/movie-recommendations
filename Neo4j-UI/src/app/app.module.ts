@@ -8,10 +8,11 @@ import {HomeModule} from "./screens/home/home.module";
 import {SettingModule} from "./screens/setting/setting.module";
 import {SettingComponent} from "./screens/setting/setting.component";
 import {NotfoundComponent} from "./shared/notfound/notfound.component";
+import {HttpClient, HttpClientModule} from "@angular/common/http";
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
   ],
   imports: [
     BrowserModule,
@@ -22,6 +23,7 @@ import {NotfoundComponent} from "./shared/notfound/notfound.component";
     ]),
     HomeModule,
     SettingModule,
+    HttpClientModule,
   ],
   providers: [],
   bootstrap: [AppComponent]
