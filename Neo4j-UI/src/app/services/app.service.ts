@@ -16,7 +16,7 @@ export class AppService {
     return this.http.get<Movie[]>(`${environment.apiUrl}/api/top/movie/top-n/10`);
   }
 
-  getRecommendations(): Observable<Recommendation[]> {
-    return this.http.get<Movie[]>(`${environment.apiUrl}/api/rec_engine/pagerank/user2/10`);
+  getRecommendations(userId: string): Observable<Recommendation[]> {
+    return this.http.get<Movie[]>(`${environment.apiUrl}/api/rec_engine/pagerank/${userId}/10`);
   }
 }

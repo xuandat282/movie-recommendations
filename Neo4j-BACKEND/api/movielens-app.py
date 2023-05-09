@@ -143,7 +143,6 @@ def getRecContent(title, n):
 
     return jsonify(avg.data())
 
-
 # Collaborative Filtering
 @app.route('/api/rec_engine/collab/<userid>/<n>')
 def getRecCollab(userid, n):
