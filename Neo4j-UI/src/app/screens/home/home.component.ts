@@ -14,12 +14,13 @@ import { Recommendation } from 'src/app/models/recommendMovie';
 export class HomeComponent implements OnInit{
   movies?: Movie[];
   recommendations?: Recommendation[];
+  userId: string = "user10";
 
   constructor(private appService: AppService, private http: HttpClient) { }
 
   ngOnInit(): void {
     this.getProducts();
-    this.getRecommendations();
+    this.getRecommendations(this.userId);
   }
 
   getProducts(): void {
@@ -28,8 +29,8 @@ export class HomeComponent implements OnInit{
     });
   }
 
-  getRecommendations(): void {
-    this.appService.getRecommendations().subscribe(movies => {
+  getRecommendations(userId: string): void {
+    this.appService.getRecommendations(userId).subscribe(movies => {
       this.recommendations = movies;
       console.log(this.recommendations);
     });
