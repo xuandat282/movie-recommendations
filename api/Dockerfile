@@ -14,4 +14,4 @@ RUN pip install -r requirements.txt
 EXPOSE 5000
 
 # Run ingestion.py when the container launches
-CMD ["python", "-m" , "flask", "-app","movielens-app", "run", "--host=8000"]
+CMD ["python", "-m" , "flask", "--app","movielens-app", "run", "--port=8000"]

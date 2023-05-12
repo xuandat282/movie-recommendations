@@ -80,7 +80,7 @@ def getMovieAverageRating(title):
 @app.route('/api/top/movie/top-n/<n>')
 def getMovieTopN(n):
     mvs = graph.run(
-        'MATCH (u: User )-[r:RATED]->(m:Movie) RETURN m.title AS title, avg(r.rating) AS averageRating order by averageRating desc limit $n',
+        'MATCH (u: User )-[r:RATED]->(m:Movie) RETURN m.title AS title, avg(r.rating) AS averageRating, m.img AS img order by averageRating desc limit $n',
         n=int(n))
 
     return mvs.data()
@@ -175,7 +175,7 @@ def getRecPageRank(userid, n):
             "YIELD nodeId, score\n"
             "WITH gds.util.asNode(nodeId) AS movie, score\n"
             "WHERE movie:Movie\n"
-            "RETURN movie.title as title, score\n"
+            "RETURN movie.title as title, score, movie.img as img\n"
             "ORDER BY score DESC\n"
             "LIMIT $n;",
             userid=str(userid), n=int(n))
