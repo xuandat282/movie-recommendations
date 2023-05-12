@@ -1,0 +1,4 @@
+flask==1.0.2
+py2neo==4.1.0
+connexion==1.5.3
+flask_cors==3.0.6

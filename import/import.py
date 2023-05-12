@@ -1,16 +1,19 @@
 import csv
 from py2neo import Graph, Node
 
-N_MOVIES = 200000
-N_RATINGS = 150000
-N_TAGS = 10000
-N_LINKS = 10000
 
-USERNAME = "neo4j"
+N_MOVIES = 1000
+N_RATINGS = 1000
+N_TAGS = 1000
+N_LINKS = 1000
+
+# NEO4J_HOST will be provided by Docker, otherwise localhost
+
+PORT = 7687
+USER = "neo4j"
 PASS = "12345678" #default
 
-graph = Graph("bolt://localhost:7687", auth = (USERNAME, PASS))
-
+graph = Graph("bolt://" + ":7687", auth=(USER, PASS))
 
 def main():
 
@@ -60,15 +63,17 @@ def createMovieNodes(row):
     id = movieData[0]
     title = movieData[1]
     year = movieData[2]
-    mov = Node("Movie", id=id, title=title, year=year)
+    img = movieData[3]
+    mov = Node("Movie", id=id, title=title, year=year, img=img)
     graph.create(mov)
 
 def parseRowMovie(row):
         id = row[0]
         year = row[1][-5:-1]
         title = row[1][:-7]
+        img = row[3]
 
-        return (id, title, year)
+        return (id, title, year, img)
 
 
 def createGenreMovieRelationships(row):
