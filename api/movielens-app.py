@@ -2,26 +2,23 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from py2neo import Graph, Node, NodeMatcher
 import connexion
+import time
+
+# wait for Neo4j in Docker
+time.sleep(15)
 
 app = Flask(__name__)
 CORS(app)
 
-USERNAME = "neo4j"
-PASS = "12345678"  # default
+USER = "neo4j"
+PASS = "12345678"
 
-graph = Graph("bolt://localhost:7687", auth=(USERNAME, PASS))
+graph = Graph("bolt://" + ":7687", auth=(USER, PASS))
 
 @app.route("/")
 def hello_world():
     return "<p>App started!</p>"
 
-# test api
-@app.route('/api/books')
-def get_books():
-    books = [{'title': 'The Hobbit', 'author': 'J.R.R. Tolkien'},
-             {'title': 'To Kill a Mockingbird', 'author': 'Harper Lee'},
-             {'title': '1984', 'author': 'George Orwell'}]
-    return jsonify(books)
 ####### Movie #######
 
 # Get the available deatils of a given movie
@@ -83,7 +80,7 @@ def getMovieAverageRating(title):
 @app.route('/api/top/movie/top-n/<n>')
 def getMovieTopN(n):
     mvs = graph.run(
-        'MATCH (u: User )-[r:RATED]->(m:Movie) RETURN m.title AS title, avg(r.rating) AS averageRating order by averageRating desc limit $n',
+        'MATCH (u: User )-[r:RATED]->(m:Movie) RETURN m.title AS title, avg(r.rating) AS averageRating, m.img AS img order by averageRating desc limit $n',
         n=int(n))
 
     return mvs.data()
@@ -178,7 +175,7 @@ def getRecPageRank(userid, n):
             "YIELD nodeId, score\n"
             "WITH gds.util.asNode(nodeId) AS movie, score\n"
             "WHERE movie:Movie\n"
-            "RETURN movie.title as title, score\n"
+            "RETURN movie.title as title, score, movie.img as img\n"
             "ORDER BY score DESC\n"
             "LIMIT $n;",
             userid=str(userid), n=int(n))
