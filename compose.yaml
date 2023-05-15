@@ -1,36 +1,27 @@
-version: "3"
+version: "3.9"
+networks:
+  neo4j-internal:
 
 services:
 
-  # Neo4j database
-  neo4j:
+  neo4j-server1:
+    # Docker image to be used
     image: neo4j:5.3.0
-    ports:
-      - 7474:7474
-      - 7687:7687
-    environment:
-      NEO4J_AUTH: neo4j/12345678
 
-  # Python code import the MovieLens dataset into Neo4j
-  import:
-    build: import
-    depends_on:
-      - neo4j
-    restart: on-failure
-    links:
-      - neo4j
-    environment:
-      NEO4J_HOST: neo4j
+    # Hostname
+    hostname: server1
 
-  # API
-  api:
-    build: api
+    # Service-level network, which specifies the networks, from the list of the top-level networks (in this case only neo4j-internal), that the server will connect to.
+    # Adds a network alias (used in neo4j.conf when configuring the discovery members)
+    networks:
+      neo4j-internal:
+        aliases:
+          - neo4j-network
+    # The ports that will be accessible from outside the container - HTTP (7474) and Bolt (7687).
     ports:
-      - 5000:5000
-    depends_on:
-      - neo4j
-    restart: on-failure
-    links:
-      - neo4j
-    environment:
-      NEO4J_HOST: neo4j
+      - "7474:7474"
+      - "7687:7687"
+#  api:
+#    build: api
+#    ports:
+#      - "8000:5000"

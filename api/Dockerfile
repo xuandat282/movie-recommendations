@@ -1,17 +1,12 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10
-
-# Set the working directory to /app
-WORKDIR /app
-
-# Copy the current directory contents into the container at /app
-ADD . /app
-
-# Install any needed packages specified in requirements.txt
+# syntax=docker/dockerfile:1.4
+FROM python:3.7
+WORKDIR /code
+ENV FLASK_APP=app.py
+ENV FLASK_RUN_HOST=0.0.0.0
+COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-
-# Make port 5000 available to the world outside this container
 EXPOSE 5000
+COPY . .
 
-# Run ingestion.py when the container launches
-CMD ["python", "-m" , "flask", "--app","movielens-app", "run", "--port=8000"]
+ENTRYPOINT ["python"]
+CMD ["-m", "flask", "--app", "app", "run", "--port=5000"]
