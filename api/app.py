@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from py2neo import Graph, Node, NodeMatcher
-import connexion
 import time
 
 # wait for Neo4j in Docker
@@ -182,11 +181,4 @@ def getRecPageRank(userid, n):
     return jsonify(rec.data())
 
 if __name__ == '__main__':
-
-    # Create the application instance
-    app = connexion.App(__name__, specification_dir='swagger/')
-
-    # Read the swagger.yml file to configure the endpoints
-    app.add_api('swagger.yml')
-
-    app.run(port=5000, host='localhost', debug=True)
+    app.run(host='localhost', port=5000, debug=True)

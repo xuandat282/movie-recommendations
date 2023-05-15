@@ -2,10 +2,10 @@ import csv
 from py2neo import Graph, Node
 
 
-N_MOVIES = 100000
-N_RATINGS = 100000
-N_TAGS = 100000
-N_LINKS = 100000
+N_MOVIES = 10000
+N_RATINGS = 10000
+N_TAGS = 10000
+N_LINKS = 10000
 
 # NEO4J_HOST will be provided by Docker, otherwise localhost
 
