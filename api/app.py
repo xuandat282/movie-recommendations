@@ -20,7 +20,7 @@ def hello_world():
 
 ####### Movie #######
 
-# Get the available deatils of a given movie
+# Get the available details of a given movie
 @app.route('/api/movie/details/<title>')
 def getMovieData(title):
     matcher = NodeMatcher(graph)
