@@ -7,11 +7,10 @@ N_RATINGS = 100836
 N_TAGS = 9742
 N_LINKS = 3683
 
-# NEO4J_HOST will be provided by Docker, otherwise localhost
 
 PORT = 7687
 USER = "neo4j"
-PASS = "12345678" #default
+PASS = "12345678"
 
 graph = Graph("bolt://" + ":7687", auth=(USER, PASS))
 

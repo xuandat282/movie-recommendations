@@ -11,7 +11,7 @@ CORS(app)
 
 USER = "neo4j"
 PASS = "12345678"
-
+projection_name = "movielens_projection"
 graph = Graph("bolt://" + ":7687", auth=(USER, PASS))
 
 @app.route("/")
@@ -19,6 +19,14 @@ def hello_world():
     return "<p>App started!</p>"
 
 ####### Movie #######
+
+def projection_exists():
+    result = graph.run(
+        'CALL gds.graph.exists("movielens_projection")\n'
+        "YIELD graphName, exists\n"
+        "RETURN exists\n"
+    )
+    return jsonify(result.data()).get_data("exists")
 
 # Get the available details of a given movie
 @app.route('/api/movie/details/<title>')
@@ -162,6 +170,23 @@ def getRecCollab(userid, n):
 # Using pagerank algorithm from Graph Data Science Library
 @app.route('/api/rec_engine/pagerank/<userid>/<n>')
 def getRecPageRank(userid, n):
+    exists = projection_exists()
+    if not exists:
+        graph.run(
+            "CALL gds.graph.project(\n"
+            "'movielens_projection',\n"
+            "['User', 'Movie'],\n"
+            "'RATED',\n"
+            "{\n"
+                "relationshipProperties: {\n"
+                    "rating: {\n"
+                        "property: 'rating',\n"
+                        "defaultValue: 0.0\n"
+                   "}\n"
+                "}\n"
+            "}\n"
+            ");\n"
+        )
     rec = graph.run(
             "MATCH (src1:User {id: $userid})\n"
             "CALL gds.pageRank.stream('movielens_projection', {\n"
