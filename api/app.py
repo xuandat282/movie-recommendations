@@ -1,17 +1,13 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from py2neo import Graph, Node, NodeMatcher
-import time
-
-# wait for Neo4j in Docker
-time.sleep(15)
 
 app = Flask(__name__)
 CORS(app)
 
 USER = "neo4j"
 PASS = "12345678"
-
+projection_name = "movielens_projection"
 graph = Graph("bolt://" + ":7687", auth=(USER, PASS))
 
 @app.route("/")
@@ -19,6 +15,14 @@ def hello_world():
     return "<p>App started!</p>"
 
 ####### Movie #######
+
+def projection_exists():
+    result = graph.run(
+        'CALL gds.graph.exists("movielens_projection")\n'
+        "YIELD graphName, exists\n"
+        "RETURN exists\n"
+    )
+    return jsonify(result.data()).get_data("exists")
 
 # Get the available details of a given movie
 @app.route('/api/movie/details/<title>')
@@ -159,9 +163,66 @@ def getRecCollab(userid, n):
 
     return jsonify(rec.data())
 
+# gds colaborative filtering item based on movie
+@app.route('/api/rec_engine/collab-item/<title>/<n>')
+def getRecCollabItem(title, n):
+    exists = graph.run(
+        'CALL gds.graph.exists("movielens_projection")\n'
+        "YIELD graphName, exists\n"
+        "RETURN exists\n"
+    )
+    if not exists.data()[0]['exists']:
+        graph.run(
+            "CALL gds.graph.project(\n"
+            "'movielens_projection',\n"
+            "['User', 'Movie'],\n"
+            "'RATED',\n"
+            "{\n"
+                "relationshipProperties: {\n"
+                    "rating: {\n"
+                        "property: 'rating',\n"
+                        "defaultValue: 0.0\n"
+                   "}\n"
+                "}\n"
+            "}\n"
+            ");\n"
+        )
+    rec = graph.run(
+            "MATCH (src1:Movie {title: $title})\n"
+            "CALL gds.alpha.similarity.overlap.stream('movielens_projection', {\n"
+            "  nodeProjection: 'Movie',\n"
+            "  relationshipProjection: 'RATED'\n"
+            "})\n"
+            "YIELD item1, item2, count\n"
+            "WHERE src1 = item1\n"
+            "RETURN item1.title AS from, item2.title AS to, count\n"
+            "ORDER BY count DESC\n"
+            "LIMIT $n", title=str(title), n=int(n))
+
+    return jsonify(rec.data())
+
+
+
 # Using pagerank algorithm from Graph Data Science Library
 @app.route('/api/rec_engine/pagerank/<userid>/<n>')
 def getRecPageRank(userid, n):
+    exists = projection_exists()
+    if not exists:
+        graph.run(
+            "CALL gds.graph.project(\n"
+            "'movielens_projection',\n"
+            "['User', 'Movie'],\n"
+            "'RATED',\n"
+            "{\n"
+                "relationshipProperties: {\n"
+                    "rating: {\n"
+                        "property: 'rating',\n"
+                        "defaultValue: 0.0\n"
+                   "}\n"
+                "}\n"
+            "}\n"
+            ");\n"
+        )
     rec = graph.run(
             "MATCH (src1:User {id: $userid})\n"
             "CALL gds.pageRank.stream('movielens_projection', {\n"
