@@ -7,14 +7,15 @@ CORS(app)
 
 USER = "neo4j"
 PASS = "12345678"
-projection_name = "movielens_projection"
 graph = Graph("bolt://" + ":7687", auth=(USER, PASS))
+
 
 @app.route("/")
 def hello_world():
     return "<p>App started!</p>"
 
 ####### Movie #######
+
 
 def projection_exists():
     result = graph.run(
@@ -25,6 +26,8 @@ def projection_exists():
     return jsonify(result.data()).get_data("exists")
 
 # Get the available details of a given movie
+
+
 @app.route('/api/movie/details/<title>')
 def getMovieData(title):
     matcher = NodeMatcher(graph)
@@ -36,7 +39,8 @@ def getMovieData(title):
 # Get the genres associated with a given movie
 @app.route('/api/movie/genres/<title>')
 def getMovieGenres(title):
-    genres = graph.run('MATCH (genres)-[:IS_GENRE_OF]->(m:Movie {title: $title}) RETURN genres', title=title)
+    genres = graph.run(
+        'MATCH (genres)-[:IS_GENRE_OF]->(m:Movie {title: $title}) RETURN genres', title=title)
 
     return jsonify(list(genres))
 
@@ -62,7 +66,8 @@ def getMovieTags(title):
 # Get list of movies from a given year
 @app.route('/api/movie/year/<year>')
 def getMoviesByYear(year):
-    movies = graph.run('MATCH (m:Movie) where m.year = $year RETURN m.title AS title, m.year AS year', year=year)
+    movies = graph.run(
+        'MATCH (m:Movie) where m.year = $year RETURN m.title AS title, m.year AS year', year=year)
 
     return jsonify(movies.data())
 
@@ -130,7 +135,7 @@ def getUserAverageRating(userId):
     return jsonify(avg.data())
 
 
-##### Recommender Enginer
+# Recommender Enginer
 
 # Content based
 @app.route('/api/rec_engine/content/<title>/<n>')
@@ -144,6 +149,8 @@ def getRecContent(title, n):
     return jsonify(avg.data())
 
 # Collaborative Filtering
+
+
 @app.route('/api/rec_engine/collab/<userid>/<n>')
 def getRecCollab(userid, n):
     rec = graph.run('MATCH (u1:User {id: $userid})-[r:RATED]->(m:Movie) '
@@ -163,83 +170,59 @@ def getRecCollab(userid, n):
 
     return jsonify(rec.data())
 
-# gds colaborative filtering item based on movie
-@app.route('/api/rec_engine/collab-item/<title>/<n>')
-def getRecCollabItem(title, n):
-    exists = graph.run(
-        'CALL gds.graph.exists("movielens_projection")\n'
-        "YIELD graphName, exists\n"
-        "RETURN exists\n"
-    )
-    if not exists.data()[0]['exists']:
-        graph.run(
-            "CALL gds.graph.project(\n"
-            "'movielens_projection',\n"
-            "['User', 'Movie'],\n"
-            "'RATED',\n"
-            "{\n"
-                "relationshipProperties: {\n"
-                    "rating: {\n"
-                        "property: 'rating',\n"
-                        "defaultValue: 0.0\n"
-                   "}\n"
-                "}\n"
-            "}\n"
-            ");\n"
-        )
-    rec = graph.run(
-            "MATCH (src1:Movie {title: $title})\n"
-            "CALL gds.alpha.similarity.overlap.stream('movielens_projection', {\n"
-            "  nodeProjection: 'Movie',\n"
-            "  relationshipProjection: 'RATED'\n"
-            "})\n"
-            "YIELD item1, item2, count\n"
-            "WHERE src1 = item1\n"
-            "RETURN item1.title AS from, item2.title AS to, count\n"
-            "ORDER BY count DESC\n"
-            "LIMIT $n", title=str(title), n=int(n))
-
-    return jsonify(rec.data())
-
-
 
 # Using pagerank algorithm from Graph Data Science Library
 @app.route('/api/rec_engine/pagerank/<userid>/<n>')
 def getRecPageRank(userid, n):
-    exists = projection_exists()
-    if not exists:
-        graph.run(
-            "CALL gds.graph.project(\n"
-            "'movielens_projection',\n"
-            "['User', 'Movie'],\n"
-            "'RATED',\n"
-            "{\n"
-                "relationshipProperties: {\n"
-                    "rating: {\n"
-                        "property: 'rating',\n"
-                        "defaultValue: 0.0\n"
-                   "}\n"
-                "}\n"
-            "}\n"
-            ");\n"
-        )
     rec = graph.run(
-            "MATCH (src1:User {id: $userid})\n"
-            "CALL gds.pageRank.stream('movielens_projection', {\n"
-            "  maxIterations: 20,\n"
-            "  dampingFactor: 0.85,\n"
-            "  sourceNodes: [src1],\n"
-            "  relationshipTypes: ['RATED'],\n"
-            "  relationshipWeightProperty: 'rating'\n"
-            "})\n"
-            "YIELD nodeId, score\n"
-            "WITH gds.util.asNode(nodeId) AS movie, score\n"
-            "WHERE movie:Movie\n"
-            "RETURN movie.title as title, score, movie.img as img\n"
-            "ORDER BY score DESC\n"
-            "LIMIT $n;",
-            userid=str(userid), n=int(n))
+        "MATCH (src1:User {id: $userid})\n"
+        "CALL gds.pageRank.stream('movielens_projection', {\n"
+        "  maxIterations: 20,\n"
+        "  dampingFactor: 0.85,\n"
+        "  sourceNodes: [src1],\n"
+        "  relationshipTypes: ['RATED'],\n"
+        "  relationshipWeightProperty: 'rating'\n"
+        "})\n"
+        "YIELD nodeId, score\n"
+        "WITH gds.util.asNode(nodeId) AS movie, score\n"
+        "WHERE movie:Movie\n"
+        "RETURN movie.title as title, score, movie.img as img\n"
+        "ORDER BY score DESC\n"
+        "LIMIT $n;",
+        userid=str(userid), n=int(n))
     return jsonify(rec.data())
+
+# Colaborative filtering GDS and KNN - recommend by user
+
+
+@app.route('/api/rec_engine/cf_gds_knn_user/<userid>/<n>')
+def getRecCF_GDS_KNN_user(userid, n):
+    query = '''
+    MATCH (u:User {id: $userid})
+    MATCH (u)-[r1:SIMILAR]->(similarUser)-[r2:RATED]->(m:Movie)<-[:IS_GENRE_OF]-(genre:Genre)
+    WHERE NOT EXISTS((u)-[:RATED]->(m))
+    RETURN u.id AS userId, m.title AS movieTitle, m.id AS movieId, COLLECT(DISTINCT genre.name) AS genres, COLLECT(DISTINCT similarUser.id) AS similarUserIds
+    LIMIT $limit
+    '''
+    rec = graph.run(query, userid=str(userid), limit=int(n))
+    return jsonify(rec.data())
+
+# Colaborative filtering GDS and KNN - recommend by movie
+
+
+@app.route('/api/rec_engine/cf_gds_knn_movie/<movieid>/<n>')
+def getRecCF_GDS_KNN_movie(movieid, n):
+    query = '''
+    MATCH (targetMovie:Movie {id: $movieid})
+    MATCH (targetMovie)-[similarity:SIMILAR]-(similarMovie:Movie)<-[:IS_GENRE_OF]-(genre:Genre)
+    WHERE similarMovie.id <> targetMovie.id
+    RETURN DISTINCT similarMovie.id AS movieId, COLLECT(DISTINCT genre.name) AS genres, similarMovie.title AS movieTitle , similarity.score AS score
+    ORDER BY similarity.score DESC
+    LIMIT $limit
+    '''
+    rec = graph.run(query, movieid=str(movieid), limit=int(n))
+    return jsonify(rec.data())
+
 
 if __name__ == '__main__':
     app.run(host='localhost', port=5000, debug=True)
