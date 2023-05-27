@@ -170,28 +170,6 @@ def getRecCollab(userid, n):
 
     return jsonify(rec.data())
 
-
-# Using pagerank algorithm from Graph Data Science Library
-@app.route('/api/rec_engine/pagerank/<userid>/<n>')
-def getRecPageRank(userid, n):
-    rec = graph.run(
-        "MATCH (src1:User {id: $userid})\n"
-        "CALL gds.pageRank.stream('movielens_projection', {\n"
-        "  maxIterations: 20,\n"
-        "  dampingFactor: 0.85,\n"
-        "  sourceNodes: [src1],\n"
-        "  relationshipTypes: ['RATED'],\n"
-        "  relationshipWeightProperty: 'rating'\n"
-        "})\n"
-        "YIELD nodeId, score\n"
-        "WITH gds.util.asNode(nodeId) AS movie, score\n"
-        "WHERE movie:Movie\n"
-        "RETURN movie.title as title, score, movie.img as img\n"
-        "ORDER BY score DESC\n"
-        "LIMIT $n;",
-        userid=str(userid), n=int(n))
-    return jsonify(rec.data())
-
 # Colaborative filtering GDS and KNN - recommend by user
 
 
@@ -222,6 +200,41 @@ def getRecCF_GDS_KNN_movie(movieid, n):
     '''
     rec = graph.run(query, movieid=str(movieid), limit=int(n))
     return jsonify(rec.data())
+
+
+@app.route('/api/rec_engine/pagerank_collab/<movieid>/<n>')
+def getRecPageRankCollab(movieid, n):
+    query = '''
+    MATCH (src1:Movie {id: $movieid})
+    CALL gds.pageRank.stream('pagerank_collab', {
+    maxIterations: 20,
+    dampingFactor: 0.85,
+    sourceNodes: [src1],
+    relationshipTypes: ['SIMILAR'],
+    relationshipWeightProperty: 'score'
+    })
+    YIELD nodeId, score
+    WHERE gds.util.asNode(nodeId).id <> src1.id
+    WITH gds.util.asNode(nodeId) AS movie, score
+    MATCH (movie)<-[:IS_GENRE_OF]-(genre:Genre)
+    RETURN movie.id AS movieId, movie.title AS movieTitle, score, COLLECT(DISTINCT genre.name) AS genres
+    ORDER BY score DESC
+    LIMIT $n;
+    '''
+    result = graph.run(query, movieid=str(movieid), n=int(n))
+    return jsonify(result.data())
+
+# get movie name by id
+
+
+@app.route('/api/getmoviename/<movieid>')
+def getMovieName(movieid):
+    query = '''
+    MATCH (m:Movie {id: $movieid})
+    RETURN m.title AS movieTitle
+    '''
+    result = graph.run(query, movieid=str(movieid))
+    return jsonify(result.data())
 
 
 if __name__ == '__main__':
