@@ -177,9 +177,9 @@ def getRecCollab(userid, n):
 def getRecCF_GDS_KNN_user(userid, n):
     query = '''
     MATCH (u:User {id: $userid})
-    MATCH (u)-[r1:SIMILAR]->(similarUser)-[r2:RATED]->(m:Movie)<-[:IS_GENRE_OF]-(genre:Genre)
+    MATCH (u)-[r1:SIMILAR]->(similarUser)-[r2:RATED]->(m:Movie)
     WHERE NOT EXISTS((u)-[:RATED]->(m))
-    RETURN u.id AS userId, m.title AS movieTitle, m.id AS movieId, COLLECT(DISTINCT genre.name) AS genres, COLLECT(DISTINCT similarUser.id) AS similarUserIds
+    RETURN u.id AS userId, m.title AS movieTitle, m.id AS movieId, COLLECT(DISTINCT similarUser.id) AS similarUserIds
     LIMIT $limit
     '''
     rec = graph.run(query, userid=str(userid), limit=int(n))
@@ -192,9 +192,9 @@ def getRecCF_GDS_KNN_user(userid, n):
 def getRecCF_GDS_KNN_movie(movieid, n):
     query = '''
     MATCH (targetMovie:Movie {id: $movieid})
-    MATCH (targetMovie)-[similarity:SIMILAR]-(similarMovie:Movie)<-[:IS_GENRE_OF]-(genre:Genre)
+    MATCH (targetMovie)-[similarity:SIMILAR]-(similarMovie:Movie)
     WHERE similarMovie.id <> targetMovie.id
-    RETURN DISTINCT similarMovie.id AS movieId, COLLECT(DISTINCT genre.name) AS genres, similarMovie.title AS movieTitle , similarity.score AS score
+    RETURN DISTINCT similarMovie.id AS movieId, similarMovie.title AS movieTitle , similarity.score AS score
     ORDER BY similarity.score DESC
     LIMIT $limit
     '''
@@ -216,8 +216,7 @@ def getRecPageRankCollab(movieid, n):
     YIELD nodeId, score
     WHERE gds.util.asNode(nodeId).id <> src1.id
     WITH gds.util.asNode(nodeId) AS movie, score
-    MATCH (movie)<-[:IS_GENRE_OF]-(genre:Genre)
-    RETURN movie.id AS movieId, movie.title AS movieTitle, score, COLLECT(DISTINCT genre.name) AS genres
+    RETURN movie.id AS movieId, movie.title AS movieTitle, score
     ORDER BY score DESC
     LIMIT $n;
     '''
