@@ -201,6 +201,27 @@ def getRecCF_GDS_KNN_movie(movieid, n):
     rec = graph.run(query, movieid=str(movieid), limit=int(n))
     return jsonify(rec.data())
 
+# Using pagerank algorithm from Graph Data Science Library
+@app.route('/api/rec_engine/pagerank/<userid>/<n>')
+def getRecPageRank(userid, n):
+    query = """
+    MATCH (root:User {id: $userid})
+    
+    CALL gds.pageRank.stream('ratings', {
+      maxIterations: 20,
+      dampingFactor: 0.85,
+       sourceNodes: [root]
+    })
+    YIELD nodeId, score
+    WITH root, gds.util.asNode(nodeId) AS movie , score
+    WHERE NOT EXISTS((root)-[:RATED]->(movie))
+    AND movie:Movie
+    RETURN movie.title AS movieTitle, movie.id AS movieId, score
+    ORDER BY score DESC
+    limit $n
+    """
+    rec = graph.run(query, userid=str(userid), n=int(n))
+    return jsonify(rec.data())
 
 @app.route('/api/rec_engine/pagerank_collab/<movieid>/<n>')
 def getRecPageRankCollab(movieid, n):
