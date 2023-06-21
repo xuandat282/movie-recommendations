@@ -179,7 +179,7 @@ def getRecCF_GDS_KNN_user(userid, n):
     MATCH (u:User {id: $userid})
     MATCH (u)-[r1:SIMILAR]->(similarUser)-[r2:RATED]->(m:Movie)
     WHERE NOT EXISTS((u)-[:RATED]->(m))
-    RETURN u.id AS userId, m.title AS movieTitle, m.id AS movieId, COLLECT(DISTINCT similarUser.id) AS similarUserIds
+    RETURN u.id AS userId, m.title AS movieTitle, m.id AS movieId, m.pagerank AS pagerank, COLLECT(DISTINCT similarUser.id) AS similarUserIds
     LIMIT $limit
     '''
     rec = graph.run(query, userid=str(userid), limit=int(n))
@@ -202,6 +202,8 @@ def getRecCF_GDS_KNN_movie(movieid, n):
     return jsonify(rec.data())
 
 # Using pagerank algorithm from Graph Data Science Library
+
+
 @app.route('/api/rec_engine/pagerank/<userid>/<n>')
 def getRecPageRank(userid, n):
     query = """
@@ -222,6 +224,7 @@ def getRecPageRank(userid, n):
     """
     rec = graph.run(query, userid=str(userid), n=int(n))
     return jsonify(rec.data())
+
 
 @app.route('/api/rec_engine/pagerank_collab/<movieid>/<n>')
 def getRecPageRankCollab(movieid, n):
